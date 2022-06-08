@@ -169,14 +169,9 @@ func (r *Renderer) Update() error {
 }
 
 func (r *Renderer) DrawHexagonGrid() {
-	// Create a 4*5 cell grid that is 800x600 pixels
-	grid := Hexago.MakeHexGrid(screenWidth, screenHeight, 16, 25)
-	grid.Context = r.dc
-	// Filling all cells with blue
-	// grid.SetFillAll(0, 0, 1, 1)
-	// Giving all cells a 10 wide black border
+	grid := Hexago.MakeHexGridWithContext(r.dc, 16, 25)
 	grid.SetStrokeAll(0.3, 0.3, 0.3, 1, 1)
-	grid.SavePNG("")
+	grid.DrawGrid()
 }
 
 func (r *Renderer) Draw(screen *ebiten.Image) {
