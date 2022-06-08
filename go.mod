@@ -3,6 +3,7 @@ module ebiten-test
 go 1.18
 
 require (
+	github.com/SHA65536/Hexago v0.0.0-20220225124148-7ccfecfd7cc7
 	github.com/fogleman/gg v1.3.0
 	github.com/hajimehoshi/ebiten/v2 v2.3.3
 )

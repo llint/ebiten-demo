@@ -30,6 +30,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/SHA65536/Hexago"
 	"github.com/fogleman/gg"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -167,8 +168,15 @@ func (r *Renderer) Update() error {
 	return nil
 }
 
-func (r *Renderer) DrawHexagonGrid(s float64) {
-
+func (r *Renderer) DrawHexagonGrid() {
+	// Create a 4*5 cell grid that is 800x600 pixels
+	grid := Hexago.MakeHexGrid(screenWidth, screenHeight, 16, 25)
+	grid.Context = r.dc
+	// Filling all cells with blue
+	// grid.SetFillAll(0, 0, 1, 1)
+	// Giving all cells a 10 wide black border
+	grid.SetStrokeAll(0.3, 0.3, 0.3, 1, 1)
+	grid.SavePNG("")
 }
 
 func (r *Renderer) Draw(screen *ebiten.Image) {
@@ -184,11 +192,12 @@ func (r *Renderer) Draw(screen *ebiten.Image) {
 	// r.dc.DrawCircle(screenWidth/2, screenHeight/2, 20)
 	r.dc.SetRGBA(0, 0, 0, 0)
 	r.dc.Clear()
-	r.dc.SetRGB(1, 1, 1)
 	// r.dc.SetLineWidth(0.5)
-	r.dc.DrawRegularPolygon(6, screenWidth/2, screenHeight/2, 20, 0)
-	r.dc.Stroke()
+	// r.dc.DrawRegularPolygon(6, screenWidth/2, screenHeight/2, 20, 0)
+	// r.dc.Stroke()
+	r.DrawHexagonGrid()
 
+	r.dc.SetRGB(1, 1, 1)
 	r.world.Draw(r.dc)
 	screen.DrawImage(ebiten.NewImageFromImage(r.dc.Image()), nil)
 }
