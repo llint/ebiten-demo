@@ -99,23 +99,6 @@ func (w *World) Update(t *time.Time) {
 	w.area = next
 }
 
-// Draw paints current game state.
-func (w *World) Draw(pix []byte) {
-	for i, v := range w.area {
-		if v {
-			pix[4*i] = 0xff
-			pix[4*i+1] = 0xff
-			pix[4*i+2] = 0xff
-			pix[4*i+3] = 0xff
-		} else {
-			pix[4*i] = 0
-			pix[4*i+1] = 0
-			pix[4*i+2] = 0
-			pix[4*i+3] = 0
-		}
-	}
-}
-
 func max(a, b int) int {
 	if a < b {
 		return b
@@ -151,30 +134,41 @@ func neighbourCount(a []bool, width, height, x, y int) int {
 	return c
 }
 
+// Draw renders current world state.
+func (w *World) Draw(dc *gg.Context) {
+	for i, v := range w.area {
+		if v {
+			dc.SetPixel(i%w.width, i/w.height)
+		}
+	}
+}
+
 const (
 	screenWidth  = 640
 	screenHeight = 480
 )
 
 type Renderer struct {
-	world  *World
-	pixels []byte
-	ch     chan struct{}
-	dc     *gg.Context
+	world *World
+	ch    chan struct{}
+	dc    *gg.Context
 }
 
-func NewRenderer(world *World, pixels []byte, ch chan struct{}, dc *gg.Context) *Renderer {
+func NewRenderer(world *World, dc *gg.Context) *Renderer {
 	return &Renderer{
-		world:  world,
-		pixels: pixels,
-		ch:     ch,
-		dc:     dc,
+		world: world,
+		ch:    make(chan struct{}),
+		dc:    dc,
 	}
 }
 
 func (r *Renderer) Update() error {
 	// r.world.Update() - do nothing!
 	return nil
+}
+
+func (r *Renderer) DrawHexagonGrid(s float64) {
+
 }
 
 func (r *Renderer) Draw(screen *ebiten.Image) {
@@ -191,12 +185,11 @@ func (r *Renderer) Draw(screen *ebiten.Image) {
 	r.dc.SetRGBA(0, 0, 0, 0)
 	r.dc.Clear()
 	r.dc.SetRGB(1, 1, 1)
-	r.dc.SetLineWidth(0.5)
+	// r.dc.SetLineWidth(0.5)
 	r.dc.DrawRegularPolygon(6, screenWidth/2, screenHeight/2, 20, 0)
 	r.dc.Stroke()
 
-	r.world.Draw(r.pixels)
-	screen.ReplacePixels(r.pixels)
+	r.world.Draw(r.dc)
 	screen.DrawImage(ebiten.NewImageFromImage(r.dc.Image()), nil)
 }
 
@@ -251,7 +244,7 @@ Loop:
 
 func main() {
 	w := NewWorld(screenWidth, screenHeight, int((screenWidth*screenHeight)/10))
-	r := NewRenderer(w, make([]byte, screenWidth*screenHeight*4), make(chan struct{}), gg.NewContext(screenWidth, screenHeight))
+	r := NewRenderer(w, gg.NewContext(screenWidth, screenHeight))
 
 	ch := make(chan struct{})
 
