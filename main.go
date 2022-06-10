@@ -24,10 +24,12 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"runtime"
+	"sync/atomic"
 	"time"
 
 	"github.com/SHA65536/Hexago"
@@ -150,21 +152,30 @@ const (
 )
 
 type Renderer struct {
-	world *World
-	ch    chan struct{}
-	dc    *gg.Context
+	world    *World
+	ch       chan struct{}
+	dc       *gg.Context
+	shutdown atomic.Value
 }
 
 func NewRenderer(world *World, dc *gg.Context) *Renderer {
-	return &Renderer{
+	r := &Renderer{
 		world: world,
 		ch:    make(chan struct{}),
 		dc:    dc,
 	}
+	r.shutdown.Store(false)
+	return r
+}
+
+func (r *Renderer) Shutdown() {
+	r.shutdown.Store(true)
 }
 
 func (r *Renderer) Update() error {
-	// r.world.Update() - do nothing!
+	if r.shutdown.Load().(bool) {
+		return errors.New("Shutdown")
+	}
 	return nil
 }
 
@@ -225,13 +236,15 @@ func StartRenderingLoop(r *Renderer, ch chan struct{}) {
 
 		ebiten.SetWindowSize(screenWidth, screenHeight)
 		ebiten.SetWindowTitle("Game of Life (Ebiten Demo)")
+		ebiten.SetWindowClosingHandled(true)
 		if err := ebiten.RunGame(r); err != nil {
-			log.Fatal(err)
+			log.Printf("err: %v", err)
 		}
 	}()
 }
 
 func RunWorldUpdateLoop(w *World, r *Renderer, ch chan struct{}) {
+	shutdown := time.NewTimer(10 * time.Second)
 	ticker := time.NewTicker(100 * time.Millisecond)
 Loop:
 	for {
@@ -242,6 +255,8 @@ Loop:
 			fmt.Println("ticker at: ", t)
 			w.Update(&t)
 			r.Render()
+		case <-shutdown.C:
+			r.Shutdown()
 		}
 	}
 }
